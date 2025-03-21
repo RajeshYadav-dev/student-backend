@@ -1,3 +1,5 @@
+import os
+import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from src.routers.student_routers import student_router
@@ -7,10 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
-    print("Server Started..")
-    init_database()
+    print("🚀 Server Started..")
+    init_database()  # ✅ Ensure DB initializes
     yield
-    print("Server Stopped..")
+    print("🛑 Server Stopped..")
 
 version = "v1"
 app = FastAPI(
@@ -28,18 +30,31 @@ app = FastAPI(
 origins = [
     "https://studentfrontend-psi.vercel.app",
     "http://localhost:5173",
-    "http://127.0.0.1:5173", # For local testing
+    "http://127.0.0.1:5173",  # ✅ Local Testing
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # ✅ Allow only your React app
+    allow_origins=origins,  
     allow_credentials=True,
-    allow_methods=["*"],  # ✅ Allow all HTTP methods
-    allow_headers=["*"],  # ✅ Allow all headers
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
-# Proper string interpolation for the prefix
+# ✅ Fix for Render’s dynamic PORT
+PORT = int(os.getenv("PORT", 8000))
+
+# ✅ Debugging route to check if server is running
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+# ✅ Ensure correct API route prefix
 app.include_router(student_router, prefix=f"/api/{version}/students", tags=["student"])
 
+# ✅ Serve static files (if needed)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ✅ Run app correctly for Render deployment
+if __name__ == "__main__":
+    uvicorn.run("src.main:app", host="0.0.0.0", port=PORT, reload=True)
